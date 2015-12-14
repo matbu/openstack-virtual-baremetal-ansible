@@ -1,0 +1,7 @@
+Host mbubox
+    Hostname 192.168.1.14
+    IdentityFile ~/.ssh/id_rsa
+    IdentitiesOnly yes
+    User root
+    StrictHostKeyChecking no
+
