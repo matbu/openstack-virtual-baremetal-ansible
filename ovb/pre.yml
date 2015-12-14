@@ -32,8 +32,9 @@
 
     - name: clone openstack-virtual-baremetal repo
       git:
-        repo=https://github.com/cybertron/openstack-virtual-baremetal/
-        dest=/home/stack/openstack-virtual-baremetal
+        repo: https://github.com/cybertron/openstack-virtual-baremetal/
+        dest: /home/stack/openstack-virtual-baremetal
+        force: yes
 
     - name: patch nova
       sudo: yes

@@ -2,6 +2,8 @@
 - name: Deploy devstack
   hosts: hosts
   gather_facts: no
+  vars:
+    - ansible_ssh_user: stack
   tasks:
       - name: Install devstack
         shell: "cd {{devstack_user_home}}/devstack && ./stack.sh && touch {{devstack_user_home}}/devstack/devstack-already-done"

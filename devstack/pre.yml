@@ -17,13 +17,14 @@
     - name: add to the sudoers
       copy:
         dest: /etc/sudoers.d/stack
-        src: files/stack_sudoer
+        src: files/sudoer
         mode: 600
         owner: root
 
     - name: create /opt/stack
       file:
-        mode: 775
+        mode: 0755
+        group: stack
         state: directory
         owner: stack
         recurse: yes
@@ -52,8 +53,9 @@
     - name: clone devstack project
       git:
         repo: https://github.com/openstack-dev/devstack.git
-        dest: '{{ devstack_user_home }}'
+        dest: '{{ devstack_user_home }}/devstack'
         recursive: no
+        force: yes
 
     - name: copy localconf template for devstack
       template:
@@ -66,4 +68,3 @@
         dest: "{{ devstack_user_home }}/devstack/stackrc"
         regexp: "GIT_BASE:-git://git.openstack.org"
         replace: "GIT_BASE:-https://github.com"
-        state: present
