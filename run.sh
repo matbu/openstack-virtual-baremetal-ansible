@@ -12,7 +12,7 @@ pip install markupsafe
 set +e
 anscmd="stdbuf -oL -eL ansible-playbook -vvvv"
 echo "Deploy devstack"
-#$anscmd -i hosts devstack/main.yml
+$anscmd -i hosts devstack/main.yml
 result=$?
 if [[ $result == 0 ]]; then
     echo "Deploy OVB"
