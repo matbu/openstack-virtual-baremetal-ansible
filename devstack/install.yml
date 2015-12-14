@@ -1,0 +1,9 @@
+---
+- name: Deploy devstack
+  hosts: hosts
+  gather_facts: no
+  tasks:
+      - name: Install devstack
+        shell: "cd {{devstack_user_home}}/devstack && ./stack.sh && touch {{devstack_user_home}}/devstack/devstack-already-done"
+        args:
+          creates: {{devstack_user_home}}/devstack/devstack-already-done

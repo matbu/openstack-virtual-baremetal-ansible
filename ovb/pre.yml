@@ -1,0 +1,47 @@
+---
+- name: "setup config for ovb"
+  hosts: hosts
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - name: configure Neutron to use the NoopFirewallDriver
+      sudo: yes
+      ignore_errors: yes
+      lineinfile:
+          dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+          line="firewall_driver = neutron.agent.firewall.NoopFirewallDriver"
+          insertafter="^\[securitygroup\]"
+          state=present
+
+    - name: configure Neutron to use the NoopFirewallDriver
+      sudo: yes
+      ignore_errors: yes
+      lineinfile:
+          dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+          line="prevent_arp_spoofing = False"
+          insertafter="^\[agent\]"
+          state=present
+
+    - name: configure Neutron to use the NoopFirewallDriver
+      sudo: yes
+      ignore_errors: yes
+      lineinfile:
+          dest=/etc/nova/nova.conf
+          line="force_config_drive = True"
+          state=absent
+
+    - name: clone openstack-virtual-baremetal repo
+      git:
+        repo=https://github.com/cybertron/openstack-virtual-baremetal/
+        dest=/home/stack/openstack-virtual-baremetal
+
+    - name: patch nova
+      sudo: yes
+      shell: >
+        cp /home/stack/openstack-virtual-baremetal/patches/kilo/nova-pxe-boot.patch /opt/stack/nova;
+        cd /opt/stack/nova;
+        patch -p1 < nova-pxe-boot.patch;
+
+# TODO
+#    - name: restart services
+#      sudo: yes

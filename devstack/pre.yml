@@ -1,0 +1,69 @@
+---
+- name: "tasks for deploying devstack - system config"
+  hosts: hosts
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - name: create stack user
+      user:
+        name: stack
+        shell: /bin/bash
+        home: /home/stack
+        createhome: yes
+
+    - name: set fact for stack home
+      set_fact: devstack_user_home=/home/stack
+
+    - name: add to the sudoers
+      copy:
+        dest: /etc/sudoers.d/stack
+        src: files/stack_sudoer
+        mode: 600
+        owner: root
+
+    - name: create /opt/stack
+      file:
+        mode: 775
+        state: directory
+        owner: stack
+        recurse: yes
+        path: /opt/stack
+
+    - name: update packages
+      sudo: yes
+      register: yum_update_result
+      yum:
+        name: '*'
+        state: latest
+
+    - name: install required packages
+      yum: name={{item}} state=present
+      sudo: yes
+      with_items:
+        - git
+        - patch
+        - screen
+
+- name: "tasks for deploying devstack - devstack config"
+  hosts: hosts
+  gather_facts: no
+  sudo: yes
+  tasks:
+    - name: clone devstack project
+      git:
+        repo: https://github.com/openstack-dev/devstack.git
+        dest: '{{ devstack_user_home }}'
+        recursive: no
+
+    - name: copy localconf template for devstack
+      template:
+        src: templates/local.conf.j2
+        dest: '{{ devstack_user_home }}/devstack/local.conf'
+        mode: 0755
+
+    - name: change git url for openstack components
+      replace:
+          dest: '{{ devstack_user_home }}/devstack/stackrc
+          regexp: "GIT_BASE:-git://git.openstack.org"
+          replace: "GIT_BASE:-https://github.com"
+          state=present

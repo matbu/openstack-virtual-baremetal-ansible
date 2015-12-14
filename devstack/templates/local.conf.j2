@@ -1,0 +1,41 @@
+ENABLED_SERVICES+=,q-svc,q-agt,q-dhcp,q-l3,q-meta,neutron
+
+DEST=/opt/stack
+disable_service n-net
+enable_service tempest
+enable_plugin neutron-vpnaas https://github.com/openstack/neutron-vpnaas
+API_RATE_LIMIT=False
+VOLUME_BACKING_FILE_SIZE=4G
+VIRT_DRIVER=libvirt
+SWIFT_REPLICAS=1
+export OS_NO_CACHE=True
+SCREEN_LOGDIR=/opt/stack/screen-logs
+SYSLOG=True
+SKIP_EXERCISES=boot_from_volume,client-env
+ROOTSLEEP=0
+ACTIVE_TIMEOUT=60
+Q_USE_SECGROUP=True
+BOOT_TIMEOUT=90
+ASSOCIATE_TIMEOUT=60
+ADMIN_PASSWORD=openstack
+MYSQL_PASSWORD=openstack
+RABBIT_PASSWORD=openstack
+SERVICE_PASSWORD=openstack
+SERVICE_TOKEN=tokentoken
+Q_PLUGIN=openvswitch
+Q_USE_DEBUG_COMMAND=True
+IPSEC_PACKAGE=openswan
+
+[[local|localrc]]
+disable_service n-net
+enable_service q-svc
+enable_service q-agt
+enable_service q-dhcp
+enable_service q-l3
+enable_service q-meta
+# Optional, to enable tempest configuration as part of devstack
+# Enable Heat
+enable_service h-eng
+enable_service h-api
+enable_service h-api-cfn
+enable_service h-api-cw
