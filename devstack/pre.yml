@@ -63,7 +63,7 @@
 
     - name: change git url for openstack components
       replace:
-          dest: '{{ devstack_user_home }}/devstack/stackrc
-          regexp: "GIT_BASE:-git://git.openstack.org"
-          replace: "GIT_BASE:-https://github.com"
-          state=present
+        dest: "{{ devstack_user_home }}/devstack/stackrc"
+        regexp: "GIT_BASE:-git://git.openstack.org"
+        replace: "GIT_BASE:-https://github.com"
+        state: present

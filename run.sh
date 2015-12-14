@@ -1,4 +1,5 @@
 #!/bin/bash -e
+export ANSIBLE_HOST_KEY_CHECKING=False
 
 if [ ! -d ansible_venv ]; then
     virtualenv ansible_venv
