@@ -1,4 +1,4 @@
 ---
 - include: pre.yml
-#- include: deploy.yml
+- include: deploy.yml
 #- include: post.yml

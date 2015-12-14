@@ -1,0 +1,134 @@
+---
+- name: "prepare host cloud for ovb"
+  hosts: hosts
+  gather_facts: no
+  vars:
+    - ansible_ssh_user: stack
+  tasks:
+    - name: get the guest-image
+      get_url: >
+        url="http://cloud.centos.org/centos/7/images/CentOS-7-x86_64-GenericCloud-20150628_01.qcow2"
+        dest=/home/stack/CentOS-7-x86_64-GenericCloud-20150628_01.qcow2
+
+    - name: get admin password
+      register: get_admin_password_result
+      shell: >
+            grep 'OS_PASSWORD' {{ devstack_user_home }}/stackrc | cut -d '=' -f2
+
+    - name: get auth url
+      register: get_auth_url_result
+      shell: >
+            grep 'OS_AUTH_URL' {{ devstack_user_home }}/stackrc | cut -d '=' -f2
+
+    - name: create an empty base image for the baremetal instances
+      shell: >
+        source {{ devstack_user_home }}/stackrc;
+        qemu-img create -f qcow2 empty.qcow2 40G;
+
+    - name: upload empty image
+      register: glance_empty_image_uuid_result
+      glance_image:
+          auth_url: "{{ get_auth_url_result.stdout }}"
+          login_username: "admin"
+          login_password: "{{ get_admin_password_result.stdout }}"
+          login_tenant_name: "admin"
+          name: "empty"
+          container_format: bare
+          disk_format: qcow2
+          state: present
+          file: "{{ devstack_user_home }}/empty.qcow2"
+
+    - name: upload os image
+      register: glance_os_image_uuid_result
+      glance_image:
+          auth_url: "{{ get_auth_url_result.stdout }}"
+          login_username: "admin"
+          login_password: "{{ get_admin_password_result.stdout }}"
+          login_tenant_name: "admin"
+          name: "CentOS"
+          container_format: bare
+          disk_format: qcow2
+          state: present
+          file: "{{ devstack_user_home }}/CentOS-7-x86_64-GenericCloud-20150628_01.qcow2"
+
+    - name: create baremetal flavor
+      ignore_errors: true
+      shell: >
+        source {{ devstack_user_home }}/stackrc;
+        nova flavor-create baremetal auto 4096 50 2;
+
+    - name: create bmc flavor
+      ignore_errors: true
+      shell: >
+        source {{ devstack_user_home }}/stackrc;
+        nova flavor-create bmc auto 512 20 1
+
+    - name: create provision
+      register: provision_network_uuid_result
+      quantum_network:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        name: "provision"
+
+    - name: create provision subnet
+      register: provision_subnet_uuid_result
+      quantum_subnet:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        network_name: "provision"
+        name: "provision"
+        enable_dhcp: False
+        cidr: "192.0.2.0/24"
+
+    - name: create private network
+      register: private_network_uuid_result
+      quantum_network:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        name: "private"
+
+    - name: create private subnet
+      register: private_subnet_uuid_result
+      quantum_subnet:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        network_name: "private"
+        name: "private"
+        dns_nameservers: "8.8.8.8"
+        cidr: "10.0.0.0/24"
+
+    - name: create nova keypair
+      ignore_errors: true
+      shell: >
+        source {{ devstack_user_home }}/stackrc;
+        nova keypair-add --pub_key ~/.ssh/id_rsa.pub "default"
+
+- name: "deploy ovb"
+  hosts: hosts
+  gather_facts: no
+  vars:
+    - ansible_ssh_user: stack
+  tasks:
+    - name: copy template env file
+      template:
+        src=templates/env.yml.j2
+        dest={{ devstack_user_home }}/openstack-virtual-baremetal/env.yaml
+
+    - name: deploy the stack
+      shell: >
+        chdir={{ devstack_user_home }}/openstack-virtual-baremetal
+        source {{ devstack_user_home }}/stackrc;
+        op=${1:-create};
+        heat stack-$op -f templates/virtual-baremetal.yaml -e env.yaml -e templates/resource-registry.yaml "ovb-baremetal"

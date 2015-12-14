@@ -6,6 +6,8 @@
     - ansible_ssh_user: stack
   tasks:
       - name: Install devstack
-        shell: "cd {{devstack_user_home}}/devstack && ./stack.sh && touch {{devstack_user_home}}/devstack/devstack-already-done"
+        shell: >
+          cd {{devstack_user_home}}/devstack && ./stack.sh &> deploy_output.log;
+          touch {{devstack_user_home}}/devstack/devstack-already-done;
         args:
           creates: "{{devstack_user_home}}/devstack/devstack-already-done"

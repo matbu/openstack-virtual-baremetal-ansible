@@ -2,8 +2,12 @@
 - name: "setup config for ovb"
   hosts: hosts
   gather_facts: no
-  sudo: yes
+  vars:
+    - ansible_ssh_user: stack
   tasks:
+    - name: set fact for stack home
+      set_fact: devstack_user_home=/home/stack
+
     - name: configure Neutron to use the NoopFirewallDriver
       sudo: yes
       ignore_errors: yes
@@ -37,12 +41,34 @@
         force: yes
 
     - name: patch nova
+      ignore_errors: yes
       sudo: yes
       shell: >
         cp /home/stack/openstack-virtual-baremetal/patches/kilo/nova-pxe-boot.patch /opt/stack/nova;
         cd /opt/stack/nova;
         patch -p1 < nova-pxe-boot.patch;
 
-# TODO
-#    - name: restart services
-#      sudo: yes
+    - name: get neutron-openvswitch-agent pid
+      register: neutron_openvswitch_agent_pid
+      sudo: yes
+      shell: >
+        ps f -u stack | grep neutron-openvswitch-agent | cut -d ' ' -f 2
+
+    - name: get nova-compute pid
+      register: nova_compute_pid
+      sudo: yes
+      shell: >
+        ps f -u stack | grep nova-compute | cut -d ' ' -f 2
+
+    - name: restart neutron-openvswitch-agent
+      shell: >
+        kill -9 {{ neutron_openvswitch_agent_pid.stdout }};
+        screen -d -m /usr/bin/python /usr/bin/neutron-openvswitch-agent \
+        --config-file /etc/neutron/neutron.conf \
+        --config-file /etc/neutron/plugins/ml2/ml2_conf.ini
+
+    - name: restart neutron-openvswitch-agent
+      shell: >
+        kill -9 {{ nova_compute_pid.stdout }};
+        screen -d -m /usr/bin/python /usr/bin/nova-compute \
+        --config-file /etc/nova/nova.conf
