@@ -14,6 +14,8 @@
     - name: set fact for stack home
       set_fact: devstack_user_home=/home/stack
 
+#mkdir /home/stack/.ssh && cp .ssh/authorized_keys /home/stack/.ssh/ && chown -R stack:stack /home/stack/.ssh
+
     - name: add to the sudoers
       copy:
         dest: /etc/sudoers.d/stack
@@ -44,11 +46,16 @@
         - git
         - patch
         - screen
+        - net-tools
+        - bridge-utils
+
+#@TODO cp authorized key for stack user
 
 - name: "tasks for deploying devstack - devstack config"
   hosts: hosts
   gather_facts: no
-  sudo: yes
+  vars:
+    - ansible_ssh_user: stack
   tasks:
     - name: clone devstack project
       git:

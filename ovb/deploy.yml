@@ -86,6 +86,29 @@
         enable_dhcp: False
         cidr: "192.0.2.0/24"
 
+    - name: create public network
+      register: private_network_uuid_result
+      quantum_network:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        name: "public_ovb"
+
+    - name: create private subnet
+      register: private_subnet_uuid_result
+      quantum_subnet:
+        state: present
+        auth_url: "{{ get_auth_url_result.stdout }}"
+        login_username: admin
+        login_password: "{{ get_admin_password_result.stdout }}"
+        login_tenant_name: admin
+        network_name: "public_ovb"
+        name: "public_ovb"
+        dns_nameservers: "8.8.8.8"
+        cidr: "10.0.0.0/24"
+
     - name: create private network
       register: private_network_uuid_result
       quantum_network:
